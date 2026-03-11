@@ -2,9 +2,9 @@ from sqlalchemy.orm import Session
 from jose import jwt, JWTError
 
 from app.core.config import settings
-from app.core.security import verify_password, create_access_token, create_refresh_token
 from app.models.user import User
 from app.utils.exceptions import BadRequest, Unauthorized
+from app.core.security import verify_password, hash_password, create_access_token, create_refresh_token
 
 
 def _ensure_institutional_email(email: str):
@@ -50,3 +50,42 @@ def refresh_access_token(refresh_token: str) -> str:
 
     # Si exp está vencido, jose lanza error y cae arriba.
     return create_access_token(user_id, email)
+
+def register(db: Session, name: str, email: str, password: str, department: str):
+    _ensure_institutional_email(email)
+
+    existing = db.query(User).filter(User.email == email.lower()).first()
+    if existing:
+        raise BadRequest("Email already registered")
+
+    if len(password) < 6:
+        raise BadRequest("Password must be at least 6 characters")
+
+    user = User(
+        name=name,
+        email=email.lower(),
+        password_hash=hash_password(password),
+        department=department,
+        language="es",
+        is_dark_mode=False,
+    )
+    db.add(user)
+    db.commit()
+    db.refresh(user)
+
+    access = create_access_token(user.id, user.email)
+    refresh = create_refresh_token(user.id, user.email)
+
+    return {
+        "access_token": access,
+        "refresh_token": refresh,
+        "token_type": "bearer",
+        "user": {
+            "id": user.id,
+            "name": user.name,
+            "email": user.email,
+            "department": user.department,
+            "language": user.language,
+            "is_dark_mode": user.is_dark_mode,
+        },
+    }

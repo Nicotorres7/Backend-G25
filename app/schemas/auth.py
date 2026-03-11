@@ -13,6 +13,35 @@ class LoginIn(BaseModel):
         return v
 
 
+class RegisterIn(BaseModel):
+    name: str
+    email: EmailStr
+    password: str
+    department: str
+
+    @field_validator("email")
+    @classmethod
+    def institutional_email(cls, v: str) -> str:
+        if not v.lower().endswith("@uniandes.edu.co"):
+            raise ValueError("Email must be institutional (@uniandes.edu.co)")
+        return v
+
+    @field_validator("name")
+    @classmethod
+    def validate_name(cls, v: str) -> str:
+        v = v.strip()
+        if len(v) < 3:
+            raise ValueError("Name must have at least 3 characters")
+        return v
+
+    @field_validator("password")
+    @classmethod
+    def validate_password(cls, v: str) -> str:
+        if len(v) < 6:
+            raise ValueError("Password must be at least 6 characters")
+        return v
+
+
 class RefreshIn(BaseModel):
     refresh_token: str
 

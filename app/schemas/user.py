@@ -13,6 +13,7 @@ class UserOut(BaseModel):
     name: str
     email: EmailStr
     department: str
+    role: str
     language: str
     is_dark_mode: bool
 

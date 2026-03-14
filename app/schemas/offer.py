@@ -14,6 +14,8 @@ class OfferCreateIn(BaseModel):
     duration_hours: int
     is_on_site: bool
     date_time: datetime
+    latitude: Optional[float] = None
+    longitude: Optional[float] = None
 
     @field_validator("title")
     @classmethod
@@ -62,6 +64,8 @@ class OfferOut(BaseModel):
     duration_hours: int
     is_on_site: bool
     date_time: datetime
+    latitude: Optional[float] = None
+    longitude: Optional[float] = None
 
     class Config:
         from_attributes = True

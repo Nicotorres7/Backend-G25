@@ -10,7 +10,8 @@ class User(Base):
     name = Column(String(100), nullable=False)
     email = Column(String(150), unique=True, index=True, nullable=False)
     password_hash = Column(String(255), nullable=False)
-    department = Column(String(50), nullable=False)
+    department = Column(String(100), nullable=False)
+    role = Column(String(20), nullable=False, default="student")
     language = Column(String(2), nullable=False, default="es")
     is_dark_mode = Column(Boolean, nullable=False, default=False)
 

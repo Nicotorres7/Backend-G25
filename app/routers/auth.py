@@ -15,7 +15,7 @@ def auth_login(payload: LoginIn, db: Session = Depends(get_db)):
 
 @router.post("/register", response_model=LoginOut)
 def auth_register(payload: RegisterIn, db: Session = Depends(get_db)):
-    return register(db, payload.name, payload.email.lower(), payload.password, payload.department)
+    return register(db, payload.name, payload.email.lower(), payload.password, payload.department, payload.role)
 
 
 @router.post("/refresh", response_model=RefreshOut)

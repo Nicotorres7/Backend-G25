@@ -1,32 +1,61 @@
-from fastapi import APIRouter, Depends
+from typing import Optional
+from fastapi import APIRouter, Depends, Query
 from sqlalchemy.orm import Session
 
 from app.core.dependencies import get_db, get_current_user
 from app.models.user import User
 from app.schemas.offer import OfferCreateIn, OfferOut
-from app.services.offer_service import create_offer, get_my_offers, get_offer_detail
+from app.schemas.application import ApplicationFullOut
+from app.services.offer_service import create_offer, get_all_offers, get_my_offers, get_offer_detail
+from app.services.application_service import list_by_offer_filtered
 
 router = APIRouter(prefix="/offers", tags=["offers"])
 
 
-@router.post("", response_model=OfferOut)
-def create_offer_route(
-    payload: OfferCreateIn,
-    db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user),
-):
+# ── Public endpoints (no auth) ─────────────────────────────────
+
+@router.post("", response_model=OfferOut, status_code=201)
+def create_offer_route(payload: OfferCreateIn, db: Session = Depends(get_db)):
     return create_offer(
         db=db,
-        user=current_user,
         title=payload.title,
         description=payload.description,
+        requirements=payload.requirements,
         category=payload.category,
         value_cop=payload.value_cop,
+        date_time=payload.date_time,
+        deadline=payload.deadline,
         duration_hours=payload.duration_hours,
         is_on_site=payload.is_on_site,
-        date_time=payload.date_time,
+        location=payload.location,
     )
 
+
+@router.get("", response_model=list[OfferOut])
+def list_offers(db: Session = Depends(get_db)):
+    return get_all_offers(db)
+
+
+@router.get("/{offer_id}/applications", response_model=list[ApplicationFullOut])
+def get_applications(
+    offer_id: int,
+    gpa_min: Optional[float] = Query(default=None),
+    semester: Optional[int] = Query(default=None),
+    availability: Optional[str] = Query(default=None),
+    sort_by: str = Query(default="gpa"),
+    db: Session = Depends(get_db),
+):
+    return list_by_offer_filtered(
+        db=db,
+        offer_id=offer_id,
+        gpa_min=gpa_min,
+        semester=semester,
+        availability=availability,
+        sort_by=sort_by,
+    )
+
+
+# ── Auth-protected endpoints ───────────────────────────────────
 
 @router.get("/my", response_model=list[OfferOut])
 def my_offers(

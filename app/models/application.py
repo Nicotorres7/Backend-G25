@@ -1,5 +1,5 @@
 import enum
-from sqlalchemy import Column, Integer, String, DateTime, ForeignKey, Enum
+from sqlalchemy import Column, Integer, String, Float, DateTime, ForeignKey, Enum, Text
 from sqlalchemy.sql import func
 from app.core.database import Base
 
@@ -15,9 +15,19 @@ class Application(Base):
 
     id = Column(Integer, primary_key=True)
     offer_id = Column(Integer, ForeignKey("offers.id", ondelete="CASCADE"), index=True, nullable=False)
+    offer_title = Column(String(200), nullable=False, default="")
 
-    student_name = Column(String(100), nullable=False)
-    student_email = Column(String(150), nullable=False)
+    # Legacy fields (kept for old auth-based routes)
+    student_name = Column(String(100), nullable=True)
+    student_email = Column(String(150), nullable=True)
+
+    # New fields required by Flutter spec
+    applicant_name = Column(String(100), nullable=False, default="")
+    career = Column(String(100), nullable=False, default="")
+    semester = Column(Integer, nullable=False, default=1)
+    gpa = Column(Float, nullable=False, default=0.0)
+    availability = Column(String(20), nullable=False, default="flexible")
+    motivation_letter = Column(Text, nullable=False, default="")
 
     status = Column(Enum(ApplicationStatus, name="application_status"), nullable=False, default=ApplicationStatus.pending)
 

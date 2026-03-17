@@ -8,7 +8,7 @@ class Settings(BaseSettings):
         extra="ignore",  # <- permite variables extra sin romper
     )
 
-    DATABASE_URL: str = "postgresql+psycopg2://goatly_user:goatly_pass@localhost:5432/goatly"
+    DATABASE_URL: str = "sqlite:///./goatly.db"
 
     SECRET_KEY: str = "change_me"
     ALGORITHM: str = "HS256"

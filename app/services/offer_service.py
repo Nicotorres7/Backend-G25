@@ -52,3 +52,27 @@ def get_offer_detail(db: Session, user: User, offer_id: int) -> Offer:
     if offer.staff_id != user.id:
         raise Forbidden("Not your offer")
     return offer
+
+
+def get_offer_by_id(db: Session, offer_id: int) -> Offer:
+    offer = db.query(Offer).filter(Offer.id == offer_id).first()
+    if not offer:
+        raise NotFound("Offer not found")
+    return offer
+
+
+def update_offer(db: Session, offer_id: int, data: dict) -> Offer:
+    offer = get_offer_by_id(db, offer_id)
+    for key, value in data.items():
+        if value is not None:
+            setattr(offer, key, value)
+    db.add(offer)
+    db.commit()
+    db.refresh(offer)
+    return offer
+
+
+def delete_offer(db: Session, offer_id: int) -> None:
+    offer = get_offer_by_id(db, offer_id)
+    db.delete(offer)
+    db.commit()

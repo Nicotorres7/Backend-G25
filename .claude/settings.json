@@ -1,0 +1,13 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(python -c \"from app.main import app; print\\(''OK - all imports resolved''\\)\")",
+      "Bash(python -c \":*)",
+      "Bash(curl -s http://127.0.0.1:8000/analytics/acceptance-rate)",
+      "Bash(python -m json.tool)",
+      "Bash(winget install:*)",
+      "Read(//c/Users/d.hernandeza2/Documents/FLUTTER-G25/flutter_application_goatly/lib/models/**)",
+      "Read(//c/Users/d.hernandeza2/Documents/FLUTTER-G25/flutter_application_goatly/lib/app/**)"
+    ]
+  }
+}

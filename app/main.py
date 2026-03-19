@@ -1,20 +1,24 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.core.config import settings
-from app.core.database import SessionLocal
+from app.core.database import engine, Base, SessionLocal
 from app.routers.auth import router as auth_router
 from app.routers.users import router as users_router
 from app.routers.offers import router as offers_router
 from app.routers.applications import router as applications_router
 from app.services.seed_service import seed_if_empty
 
+# Import all models so create_all picks them up
+import app.models.user  # noqa: F401
+import app.models.offer  # noqa: F401
+import app.models.application  # noqa: F401
+
 app = FastAPI(title="Goatly Backend", version="1.0.0")
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=settings.cors_list(),
-    allow_credentials=True,
+    allow_origins=["*"],
+    allow_credentials=False,
     allow_methods=["*"],
     allow_headers=["*"],
 )
@@ -31,9 +35,8 @@ def health():
 
 
 @app.on_event("startup")
-def startup_seed():
-    if not settings.SEED_ON_STARTUP:
-        return
+def startup():
+    Base.metadata.create_all(bind=engine)
     db = SessionLocal()
     try:
         seed_if_empty(db)

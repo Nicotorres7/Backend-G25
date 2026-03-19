@@ -1,3 +1,4 @@
+from typing import Optional
 from sqlalchemy.orm import Session
 from app.models.application import Application, ApplicationStatus
 from app.models.offer import Offer
@@ -20,6 +21,44 @@ def list_by_status(db: Session, user: User, status: ApplicationStatus) -> list[A
         .order_by(Application.id.desc())
         .all()
     )
+
+
+def list_my_applications(
+    db: Session,
+    user: User,
+    status_filter: Optional[ApplicationStatus] = None,
+) -> dict:
+    """
+    Returns all applications submitted by the authenticated student,
+    optionally filtered by status, enriched with offer details.
+
+    Also computes aggregated stats (total, pending, accepted, rejected)
+    across ALL the student's applications regardless of the active filter —
+    answering the Type 2 business question:
+    'How many of my applications are in each status?'
+
+    Filtering strategy: Application.student_email == user.email
+    (Application stores student identity as plain strings, not a FK to users).
+    """
+    base_query = db.query(Application).filter(Application.student_email == user.email)
+
+    filtered = base_query
+    if status_filter:
+        filtered = filtered.filter(Application.status == status_filter)
+    applications = filtered.order_by(Application.id.desc()).all()
+
+    for application in applications:
+        application.offer = db.query(Offer).filter(Offer.id == application.offer_id).first()
+
+    all_apps = base_query.all()
+    stats = {
+        "total": len(all_apps),
+        "pending": sum(1 for a in all_apps if a.status == ApplicationStatus.pending),
+        "accepted": sum(1 for a in all_apps if a.status == ApplicationStatus.accepted),
+        "rejected": sum(1 for a in all_apps if a.status == ApplicationStatus.rejected),
+    }
+
+    return {"applications": applications, "stats": stats}
 
 
 def update_status(db: Session, user: User, application_id: int, new_status: ApplicationStatus) -> Application:

@@ -50,7 +50,22 @@ def seed_if_empty(db: Session):
     db.refresh(offer1)
     db.refresh(offer2)
 
+    # Seed student — used to test GET /applications/my (MyApplicationsScreen)
+    student = User(
+        name="Juan Perez",
+        email="juan.perez.student@uniandes.edu.co",
+        password_hash=hash_password("123456"),
+        department="Ingeniería",
+        role="student",
+        language="es",
+        is_dark_mode=False,
+    )
+    db.add(student)
+    db.commit()
+    db.refresh(student)
+
     apps = [
+        # Other students applying to offer1
         Application(
             offer_id=offer1.id,
             student_name="Ana Gómez",
@@ -67,6 +82,25 @@ def seed_if_empty(db: Session):
             offer_id=offer2.id,
             student_name="Laura Díaz",
             student_email="laura.diaz@uniandes.edu.co",
+            status=ApplicationStatus.rejected,
+        ),
+        # Seed student applications — covers all 3 statuses for MyApplicationsScreen testing
+        Application(
+            offer_id=offer1.id,
+            student_name=student.name,
+            student_email=student.email,
+            status=ApplicationStatus.accepted,
+        ),
+        Application(
+            offer_id=offer2.id,
+            student_name=student.name,
+            student_email=student.email,
+            status=ApplicationStatus.pending,
+        ),
+        Application(
+            offer_id=offer2.id,
+            student_name=student.name,
+            student_email=student.email,
             status=ApplicationStatus.rejected,
         ),
     ]

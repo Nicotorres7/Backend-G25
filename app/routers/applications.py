@@ -23,6 +23,12 @@ from app.models.application import ApplicationStatus
 from app.schemas.application import ApplicationOut, UpdateStatusIn, MyApplicationsResponse
 from app.services.application_service import list_by_status, update_status, list_my_applications
 
+from app.schemas.application import ApplicationOut, UpdateStatusIn, ApplyIn, TopOfferOut
+from app.services.application_service import (
+    list_by_status, update_status, apply_to_offer,
+    get_my_applications, top_offers_by_applications
+)
+
 router = APIRouter(prefix="/applications", tags=["applications"])
 
 
@@ -69,3 +75,24 @@ def change_status(
     current_user: User = Depends(get_current_user),
 ):
     return update_status(db, current_user, application_id, ApplicationStatus(payload.status))
+
+@router.post("", response_model=ApplicationOut)
+def apply(
+    payload: ApplyIn,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    return apply_to_offer(db, current_user, payload.offer_id)
+
+
+@router.get("/my", response_model=list[ApplicationOut])
+def my_applications(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    return get_my_applications(db, current_user)
+
+
+@router.get("/bq/top-offers", response_model=list[TopOfferOut])
+def bq_top_offers(db: Session = Depends(get_db)):
+    return top_offers_by_applications(db)

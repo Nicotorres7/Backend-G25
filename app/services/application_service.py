@@ -77,3 +77,55 @@ def update_status(db: Session, user: User, application_id: int, new_status: Appl
     db.commit()
     db.refresh(app)
     return app
+
+
+def apply_to_offer(db: Session, user: User, offer_id: int) -> Application:
+    # Solo estudiantes pueden aplicar
+    if user.role != "student":
+        raise Forbidden("Only students can apply to offers")
+
+    offer = db.query(Offer).filter(Offer.id == offer_id).first()
+    if not offer:
+        raise NotFound("Offer not found")
+
+    # Verificar que no haya aplicado ya
+    existing = db.query(Application).filter(
+        Application.offer_id == offer_id,
+        Application.student_email == user.email
+    ).first()
+    if existing:
+        from fastapi import HTTPException
+        raise HTTPException(status_code=409, detail="Already applied to this offer")
+
+    app = Application(
+        offer_id=offer_id,
+        student_name=user.name,
+        student_email=user.email,
+        status=ApplicationStatus.pending
+    )
+    db.add(app)
+    db.commit()
+    db.refresh(app)
+    return app
+
+
+def get_my_applications(db: Session, user: User) -> list[Application]:
+    return (
+        db.query(Application)
+        .filter(Application.student_email == user.email)
+        .order_by(Application.id.desc())
+        .all()
+    )
+
+
+def top_offers_by_applications(db: Session) -> list[dict]:
+    from sqlalchemy import func as sqlfunc
+    rows = (
+        db.query(Offer.title, sqlfunc.count(Application.id).label("total"))
+        .join(Application, Application.offer_id == Offer.id)
+        .group_by(Offer.id, Offer.title)
+        .order_by(sqlfunc.count(Application.id).desc())
+        .limit(10)
+        .all()
+    )
+    return [{"title": r.title, "total": r.total} for r in rows]

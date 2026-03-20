@@ -63,3 +63,10 @@ class MyApplicationsResponse(BaseModel):
     """Full response for GET /applications/my."""
     applications: list[MyApplicationOut]
     stats: ApplicationStats
+
+class ApplyIn(BaseModel):
+    offer_id: int
+
+class TopOfferOut(BaseModel):
+    title: str
+    total: int

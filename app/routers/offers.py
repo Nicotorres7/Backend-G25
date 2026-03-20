@@ -4,9 +4,9 @@ from sqlalchemy.orm import Session
 
 from app.core.dependencies import get_db, get_current_user
 from app.models.user import User
-from app.schemas.offer import OfferCreateIn, OfferUpdateIn, OfferOut
+from app.schemas.offer import OfferCreateIn, OfferOut
 from app.schemas.application import ApplicationFullOut
-from app.services.offer_service import create_offer, get_all_offers, get_my_offers, get_offer_detail, update_offer, delete_offer
+from app.services.offer_service import create_offer, get_all_offers, get_my_offers, get_offer_detail
 from app.services.application_service import list_by_offer_filtered
 
 router = APIRouter(prefix="/offers", tags=["offers"])
@@ -72,23 +72,3 @@ def offer_detail(
     current_user: User = Depends(get_current_user),
 ):
     return get_offer_detail(db, current_user, offer_id)
-
-
-# ── Offer edit & delete (public, matching existing pattern) ────
-
-@router.put("/{offer_id}", response_model=OfferOut)
-def update_offer_route(
-    offer_id: int,
-    payload: OfferUpdateIn,
-    db: Session = Depends(get_db),
-):
-    return update_offer(db, offer_id, payload.model_dump(exclude_unset=True))
-
-
-@router.delete("/{offer_id}")
-def delete_offer_route(
-    offer_id: int,
-    db: Session = Depends(get_db),
-):
-    delete_offer(db, offer_id)
-    return {"detail": "Offer deleted successfully"}

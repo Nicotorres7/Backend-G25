@@ -6,7 +6,6 @@ from app.routers.auth import router as auth_router
 from app.routers.users import router as users_router
 from app.routers.offers import router as offers_router
 from app.routers.applications import router as applications_router
-from app.routers.analytics import router as analytics_router
 from app.services.seed_service import seed_if_empty
 
 # Import all models so create_all picks them up
@@ -28,7 +27,7 @@ app.include_router(auth_router)
 app.include_router(users_router)
 app.include_router(offers_router)
 app.include_router(applications_router)
-app.include_router(analytics_router)
+
 
 
 @app.get("/health")

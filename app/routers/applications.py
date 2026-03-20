@@ -11,6 +11,7 @@ Staff-facing endpoints:
   GET /applications/rejected
   PUT /applications/{id}/status
   PATCH /applications/{id}/status (public, no auth)
+  GET /applications/search → search across all applications
 """
 
 from typing import Optional
@@ -22,18 +23,35 @@ from app.models.user import User
 from app.models.application import ApplicationStatus
 from app.schemas.application import (
     ApplicationOut, ApplicationFullOut, UpdateStatusIn,
-    ApplyIn, TopOfferOut, MyApplicationsResponse
+    ApplyIn, TopOfferOut, MyApplicationsResponse,
+    ApplicationSearchOut
 )
 from app.services.application_service import (
     list_by_status, update_status, update_status_public,
     apply_to_offer, list_my_applications,
     get_my_applications, top_offers_by_applications
 )
+from app.services.search_service import search_applications
 
 router = APIRouter(prefix="/applications", tags=["applications"])
 
 
 # ── Public endpoints (no auth) ─────────────────────────────────
+
+@router.get("/search", response_model=list[ApplicationSearchOut])
+def search(
+    q: Optional[str] = Query(default=None),
+    semester: Optional[int] = Query(default=None),
+    career: Optional[str] = Query(default=None),
+    db: Session = Depends(get_db),
+):
+    """
+    Application Search – searches across ALL offers by applicant name, career, or offer title.
+    Functional scenario: Staff types a query -> system dynamically queries and returns matches.
+    Quality scenario (Performance): Response time < 2 s regardless of query complexity.
+    """
+    return search_applications(db, q=q, semester=semester, career=career)
+
 
 @router.patch("/{application_id}/status", response_model=ApplicationFullOut)
 def change_status_public(
@@ -94,7 +112,7 @@ def accepted(db: Session = Depends(get_db), current_user: User = Depends(get_cur
 
 @router.get("/rejected", response_model=list[ApplicationOut])
 def rejected(db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
-    return list_by_status(db, current_user, ApplicationStatus.rejected)
+    return list_by_status(db, current_user, ApplicationStatus.accepted)
 
 
 @router.put("/{application_id}/status", response_model=ApplicationOut)

@@ -3,6 +3,7 @@ from sqlalchemy import func as sql_func
 
 from app.models.offer import Offer
 from app.models.application import Application, ApplicationStatus
+from collections import defaultdict
 
 
 def get_acceptance_rate_by_offer(db: Session) -> list[dict]:
@@ -50,6 +51,80 @@ def get_acceptance_rate_by_offer(db: Session) -> list[dict]:
             }
         )
     return results
+
+
+def get_gpa_by_offer(db: Session) -> list[dict]:
+    """
+    BQ2 – Average GPA of applicants per offer.
+    Uses a single joined query for performance (quality scenario: < 2 s).
+    Only includes offers that have at least one application.
+    """
+    rows = (
+        db.query(
+            Offer.id,
+            Offer.title,
+            Offer.category,
+            sql_func.count(Application.id).label("total"),
+            sql_func.avg(Application.gpa).label("avg_gpa"),
+            sql_func.min(Application.gpa).label("min_gpa"),
+            sql_func.max(Application.gpa).label("max_gpa"),
+        )
+        .join(Application, Application.offer_id == Offer.id)
+        .group_by(Offer.id, Offer.title, Offer.category)
+        .order_by(sql_func.avg(Application.gpa).desc())
+        .all()
+    )
+
+    results = []
+    for row in rows:
+        results.append(
+            {
+                "offer_id": row.id,
+                "offer_title": row.title,
+                "category": row.category,
+                "total_applicants": row.total,
+                "average_gpa": round(float(row.avg_gpa), 2),
+                "min_gpa": round(float(row.min_gpa), 2),
+                "max_gpa": round(float(row.max_gpa), 2),
+            }
+        )
+    return results
+
+
+def get_top_applicants(db: Session, limit: int = 10) -> list[dict]:
+    """
+    Top Applicants Leaderboard – ranks candidates by GPA across all offers.
+    Functional scenario: Staff opens leaderboard -> system queries all applications,
+    deduplicates by applicant name, ranks by GPA descending.
+    """
+    rows = (
+        db.query(Application)
+        .order_by(Application.gpa.desc())
+        .all()
+    )
+
+    # Deduplicate by applicant_name, keeping the one with highest GPA first
+    seen: dict[str, dict] = {}
+    for app in rows:
+        name = app.applicant_name
+        if name not in seen:
+            seen[name] = {
+                "applicant_name": name,
+                "career": app.career,
+                "semester": app.semester,
+                "gpa": app.gpa,
+                "total_applications": 0,
+                "offers_applied": [],
+                "status_summary": {"accepted": 0, "rejected": 0, "pending": 0},
+            }
+        entry = seen[name]
+        entry["total_applications"] += 1
+        if app.offer_title not in entry["offers_applied"]:
+            entry["offers_applied"].append(app.offer_title)
+        entry["status_summary"][app.status.value] += 1
+
+    ranked = sorted(seen.values(), key=lambda x: x["gpa"], reverse=True)
+    return ranked[:limit]
 
 
 def get_overall_insights(db: Session) -> dict:

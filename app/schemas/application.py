@@ -31,6 +31,22 @@ class ApplicationFullOut(BaseModel):
     created_at: datetime
 
 
+class ApplicationSearchOut(BaseModel):
+    """Schema for application search results across all offers."""
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    offer_id: int
+    offer_title: str
+    applicant_name: str
+    career: str
+    semester: int
+    gpa: float
+    availability: str
+    status: Status
+    created_at: datetime
+
+
 class UpdateStatusIn(BaseModel):
     status: Status
 

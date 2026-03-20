@@ -101,9 +101,23 @@ def seed_if_empty(db: Session):
     for o in [offer1, offer2, offer3, offer4, offer5]:
         db.refresh(o)
 
-    # ── Applications (15 total, good mix of statuses) ─────────────
+    # ── Seed student — used to test GET /applications/my ──────────
+    student = User(
+        name="Juan Perez",
+        email="juan.perez.student@uniandes.edu.co",
+        password_hash=hash_password("123456"),
+        department="Ingeniería",
+        role="student",
+        language="es",
+        is_dark_mode=False,
+    )
+    db.add(student)
+    db.commit()
+    db.refresh(student)
+
+    # ── Applications (15 total + 3 for seed student) ──────────────
     apps = [
-        # Offer 1: Apoyo Biblioteca — 4 apps (2 accepted, 1 rejected, 1 pending)
+        # Offer 1: Apoyo Biblioteca — 4 apps
         Application(
             offer_id=offer1.id, offer_title=offer1.title,
             student_name="Ana Gómez", student_email="ana.gomez@uniandes.edu.co",
@@ -137,7 +151,7 @@ def seed_if_empty(db: Session):
             status=ApplicationStatus.pending,
         ),
 
-        # Offer 2: Lab Física — 3 apps (1 accepted, 1 rejected, 1 pending)
+        # Offer 2: Lab Física — 3 apps
         Application(
             offer_id=offer2.id, offer_title=offer2.title,
             student_name="Laura Díaz", student_email="laura.diaz@uniandes.edu.co",
@@ -163,7 +177,7 @@ def seed_if_empty(db: Session):
             status=ApplicationStatus.pending,
         ),
 
-        # Offer 3: Monitor Cálculo — 3 apps (2 accepted, 0 rejected, 1 pending)
+        # Offer 3: Monitor Cálculo — 3 apps
         Application(
             offer_id=offer3.id, offer_title=offer3.title,
             student_name="Andrés Morales", student_email="andres.morales@uniandes.edu.co",
@@ -189,7 +203,7 @@ def seed_if_empty(db: Session):
             status=ApplicationStatus.pending,
         ),
 
-        # Offer 4: Diseñador Redes — 3 apps (0 accepted, 2 rejected, 1 pending)
+        # Offer 4: Diseñador Redes — 3 apps
         Application(
             offer_id=offer4.id, offer_title=offer4.title,
             student_name="Isabella Ruiz", student_email="isabella.ruiz@uniandes.edu.co",
@@ -215,7 +229,7 @@ def seed_if_empty(db: Session):
             status=ApplicationStatus.pending,
         ),
 
-        # Offer 5: Auxiliar Deportivo — 2 apps (1 accepted, 0 rejected, 1 pending)
+        # Offer 5: Auxiliar Deportivo — 2 apps
         Application(
             offer_id=offer5.id, offer_title=offer5.title,
             student_name="Santiago Mejía", student_email="santiago.mejia@uniandes.edu.co",
@@ -231,6 +245,26 @@ def seed_if_empty(db: Session):
             semester=4, gpa=4.4, availability="part_time",
             motivation_letter="Me interesa el deporte y puedo ayudar con primeros auxilios si se necesita.",
             status=ApplicationStatus.pending,
+        ),
+
+        # Seed student applications — covers all 3 statuses for MyApplicationsScreen testing
+        Application(
+            offer_id=offer1.id,
+            student_name=student.name,
+            student_email=student.email,
+            status=ApplicationStatus.accepted,
+        ),
+        Application(
+            offer_id=offer2.id,
+            student_name=student.name,
+            student_email=student.email,
+            status=ApplicationStatus.pending,
+        ),
+        Application(
+            offer_id=offer3.id,
+            student_name=student.name,
+            student_email=student.email,
+            status=ApplicationStatus.rejected,
         ),
     ]
 

@@ -1,11 +1,34 @@
-from fastapi import APIRouter, Depends
+"""
+Router: /applications
+Student-facing endpoints (Sprint 2):
+  POST /applications → apply to offer
+  GET /applications/my → MyApplicationsScreen (View 2)
+  GET /applications/bq/top-offers → BQ analytics
+
+Staff-facing endpoints:
+  GET /applications/pending
+  GET /applications/accepted
+  GET /applications/rejected
+  PUT /applications/{id}/status
+  PATCH /applications/{id}/status (public, no auth)
+"""
+
+from typing import Optional
+from fastapi import APIRouter, Depends, Query
 from sqlalchemy.orm import Session
 
 from app.core.dependencies import get_db, get_current_user
 from app.models.user import User
 from app.models.application import ApplicationStatus
-from app.schemas.application import ApplicationOut, ApplicationFullOut, UpdateStatusIn
-from app.services.application_service import list_by_status, update_status, update_status_public
+from app.schemas.application import (
+    ApplicationOut, ApplicationFullOut, UpdateStatusIn,
+    ApplyIn, TopOfferOut, MyApplicationsResponse
+)
+from app.services.application_service import (
+    list_by_status, update_status, update_status_public,
+    apply_to_offer, list_my_applications,
+    get_my_applications, top_offers_by_applications
+)
 
 router = APIRouter(prefix="/applications", tags=["applications"])
 
@@ -21,7 +44,43 @@ def change_status_public(
     return update_status_public(db, application_id, ApplicationStatus(payload.status))
 
 
-# ── Auth-protected endpoints ───────────────────────────────────
+# ── Student endpoints ───────────────────────────────────────────
+
+@router.post("", response_model=ApplicationOut)
+def apply(
+    payload: ApplyIn,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    return apply_to_offer(db, current_user, payload.offer_id)
+
+
+@router.get(
+    "/my",
+    response_model=MyApplicationsResponse,
+    summary="Get my applications",
+    description=(
+        "Returns all applications submitted by the authenticated student, "
+        "enriched with offer details and aggregated status stats. "
+        "Accepts an optional ?status filter (pending | accepted | rejected). "
+        "Stats always reflect totals across ALL applications regardless of the active filter."
+    ),
+)
+def my_applications(
+    status: Optional[str] = Query(default=None, pattern="^(pending|accepted|rejected)$"),
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    status_filter = ApplicationStatus(status) if status else None
+    return list_my_applications(db, current_user, status_filter)
+
+
+@router.get("/bq/top-offers", response_model=list[TopOfferOut])
+def bq_top_offers(db: Session = Depends(get_db)):
+    return top_offers_by_applications(db)
+
+
+# ── Staff endpoints ─────────────────────────────────────────────
 
 @router.get("/pending", response_model=list[ApplicationOut])
 def pending(db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):

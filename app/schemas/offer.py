@@ -16,6 +16,21 @@ class OfferCreateIn(BaseModel):
     location: str = ""
 
 
+class OfferUpdateIn(BaseModel):
+    """Partial update – only provided fields are changed."""
+
+    title: Optional[str] = None
+    description: Optional[str] = None
+    requirements: Optional[str] = None
+    category: Optional[str] = None
+    value_cop: Optional[int] = None
+    date_time: Optional[datetime] = None
+    deadline: Optional[datetime] = None
+    duration_hours: Optional[int] = None
+    is_on_site: Optional[bool] = None
+    location: Optional[str] = None
+
+
 class OfferOut(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 

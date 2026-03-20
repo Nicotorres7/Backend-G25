@@ -1,5 +1,6 @@
 from typing import Optional
 from sqlalchemy.orm import Session
+from sqlalchemy import func as sqlfunc
 from app.models.application import Application, ApplicationStatus
 from app.models.offer import Offer
 from app.models.user import User
@@ -23,6 +24,32 @@ def list_by_status(db: Session, user: User, status: ApplicationStatus) -> list[A
     )
 
 
+def list_my_applications(
+    db: Session,
+    user: User,
+    status_filter: Optional[ApplicationStatus] = None,
+) -> dict:
+    base_query = db.query(Application).filter(Application.student_email == user.email)
+
+    filtered = base_query
+    if status_filter:
+        filtered = filtered.filter(Application.status == status_filter)
+    applications = filtered.order_by(Application.id.desc()).all()
+
+    for application in applications:
+        application.offer = db.query(Offer).filter(Offer.id == application.offer_id).first()
+
+    all_apps = base_query.all()
+    stats = {
+        "total": len(all_apps),
+        "pending": sum(1 for a in all_apps if a.status == ApplicationStatus.pending),
+        "accepted": sum(1 for a in all_apps if a.status == ApplicationStatus.accepted),
+        "rejected": sum(1 for a in all_apps if a.status == ApplicationStatus.rejected),
+    }
+
+    return {"applications": applications, "stats": stats}
+
+
 def list_by_offer_filtered(
     db: Session,
     offer_id: int,
@@ -44,7 +71,7 @@ def list_by_offer_filtered(
         query = query.order_by(Application.semester.asc())
     elif sort_by == "date":
         query = query.order_by(Application.created_at.desc())
-    else:  # default: gpa descending
+    else:
         query = query.order_by(Application.gpa.desc())
 
     return query.all()
@@ -79,3 +106,52 @@ def update_status_public(db: Session, application_id: int, new_status: Applicati
     db.commit()
     db.refresh(app)
     return app
+
+
+def apply_to_offer(db: Session, user: User, offer_id: int) -> Application:
+    if user.role != "student":
+        raise Forbidden("Only students can apply to offers")
+
+    offer = db.query(Offer).filter(Offer.id == offer_id).first()
+    if not offer:
+        raise NotFound("Offer not found")
+
+    existing = db.query(Application).filter(
+        Application.offer_id == offer_id,
+        Application.student_email == user.email
+    ).first()
+    if existing:
+        from fastapi import HTTPException
+        raise HTTPException(status_code=409, detail="Already applied to this offer")
+
+    app = Application(
+        offer_id=offer_id,
+        student_name=user.name,
+        student_email=user.email,
+        status=ApplicationStatus.pending
+    )
+    db.add(app)
+    db.commit()
+    db.refresh(app)
+    return app
+
+
+def get_my_applications(db: Session, user: User) -> list[Application]:
+    return (
+        db.query(Application)
+        .filter(Application.student_email == user.email)
+        .order_by(Application.id.desc())
+        .all()
+    )
+
+
+def top_offers_by_applications(db: Session) -> list[dict]:
+    rows = (
+        db.query(Offer.title, sqlfunc.count(Application.id).label("total"))
+        .join(Application, Application.offer_id == Offer.id)
+        .group_by(Offer.id, Offer.title)
+        .order_by(sqlfunc.count(Application.id).desc())
+        .limit(10)
+        .all()
+    )
+    return [{"title": r.title, "total": r.total} for r in rows]

@@ -1,5 +1,6 @@
 from typing import Optional
 from sqlalchemy.orm import Session
+from sqlalchemy import func as sqlfunc
 from app.models.application import Application, ApplicationStatus
 from app.models.offer import Offer
 from app.models.user import User
@@ -28,18 +29,6 @@ def list_my_applications(
     user: User,
     status_filter: Optional[ApplicationStatus] = None,
 ) -> dict:
-    """
-    Returns all applications submitted by the authenticated student,
-    optionally filtered by status, enriched with offer details.
-
-    Also computes aggregated stats (total, pending, accepted, rejected)
-    across ALL the student's applications regardless of the active filter —
-    answering the Type 2 business question:
-    'How many of my applications are in each status?'
-
-    Filtering strategy: Application.student_email == user.email
-    (Application stores student identity as plain strings, not a FK to users).
-    """
     base_query = db.query(Application).filter(Application.student_email == user.email)
 
     filtered = base_query
@@ -61,6 +50,33 @@ def list_my_applications(
     return {"applications": applications, "stats": stats}
 
 
+def list_by_offer_filtered(
+    db: Session,
+    offer_id: int,
+    gpa_min: Optional[float] = None,
+    semester: Optional[int] = None,
+    availability: Optional[str] = None,
+    sort_by: str = "gpa",
+) -> list[Application]:
+    query = db.query(Application).filter(Application.offer_id == offer_id)
+
+    if gpa_min is not None:
+        query = query.filter(Application.gpa >= gpa_min)
+    if semester is not None:
+        query = query.filter(Application.semester == semester)
+    if availability is not None:
+        query = query.filter(Application.availability == availability)
+
+    if sort_by == "semester":
+        query = query.order_by(Application.semester.asc())
+    elif sort_by == "date":
+        query = query.order_by(Application.created_at.desc())
+    else:
+        query = query.order_by(Application.gpa.desc())
+
+    return query.all()
+
+
 def update_status(db: Session, user: User, application_id: int, new_status: ApplicationStatus) -> Application:
     app = db.query(Application).filter(Application.id == application_id).first()
     if not app:
@@ -79,8 +95,20 @@ def update_status(db: Session, user: User, application_id: int, new_status: Appl
     return app
 
 
+def update_status_public(db: Session, application_id: int, new_status: ApplicationStatus) -> Application:
+    """Update application status without requiring auth."""
+    app = db.query(Application).filter(Application.id == application_id).first()
+    if not app:
+        raise NotFound("Application not found")
+
+    app.status = new_status
+    db.add(app)
+    db.commit()
+    db.refresh(app)
+    return app
+
+
 def apply_to_offer(db: Session, user: User, offer_id: int) -> Application:
-    # Solo estudiantes pueden aplicar
     if user.role != "student":
         raise Forbidden("Only students can apply to offers")
 
@@ -88,7 +116,6 @@ def apply_to_offer(db: Session, user: User, offer_id: int) -> Application:
     if not offer:
         raise NotFound("Offer not found")
 
-    # Verificar que no haya aplicado ya
     existing = db.query(Application).filter(
         Application.offer_id == offer_id,
         Application.student_email == user.email
@@ -119,7 +146,6 @@ def get_my_applications(db: Session, user: User) -> list[Application]:
 
 
 def top_offers_by_applications(db: Session) -> list[dict]:
-    from sqlalchemy import func as sqlfunc
     rows = (
         db.query(Offer.title, sqlfunc.count(Application.id).label("total"))
         .join(Application, Application.offer_id == Offer.id)

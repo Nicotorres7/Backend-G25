@@ -6,29 +6,39 @@ from app.utils.exceptions import NotFound, Forbidden
 
 def create_offer(
     db: Session,
-    user: User,
     title: str,
     description: str,
+    requirements: str,
     category: str | None,
     value_cop: int,
+    date_time,
+    deadline,
     duration_hours: int,
     is_on_site: bool,
-    date_time,
+    location: str,
+    staff_id: int | None = None,
 ) -> Offer:
     offer = Offer(
-        staff_id=user.id,
+        staff_id=staff_id,
         title=title,
         description=description,
+        requirements=requirements,
         category=category,
         value_cop=value_cop,
+        date_time=date_time,
+        deadline=deadline,
         duration_hours=duration_hours,
         is_on_site=is_on_site,
-        date_time=date_time,
+        location=location,
     )
     db.add(offer)
     db.commit()
     db.refresh(offer)
     return offer
+
+
+def get_all_offers(db: Session) -> list[Offer]:
+    return db.query(Offer).order_by(Offer.created_at.desc()).all()
 
 
 def get_my_offers(db: Session, user: User) -> list[Offer]:
@@ -42,3 +52,27 @@ def get_offer_detail(db: Session, user: User, offer_id: int) -> Offer:
     if offer.staff_id != user.id:
         raise Forbidden("Not your offer")
     return offer
+
+
+def get_offer_by_id(db: Session, offer_id: int) -> Offer:
+    offer = db.query(Offer).filter(Offer.id == offer_id).first()
+    if not offer:
+        raise NotFound("Offer not found")
+    return offer
+
+
+def update_offer(db: Session, offer_id: int, data: dict) -> Offer:
+    offer = get_offer_by_id(db, offer_id)
+    for key, value in data.items():
+        if value is not None:
+            setattr(offer, key, value)
+    db.add(offer)
+    db.commit()
+    db.refresh(offer)
+    return offer
+
+
+def delete_offer(db: Session, offer_id: int) -> None:
+    offer = get_offer_by_id(db, offer_id)
+    db.delete(offer)
+    db.commit()

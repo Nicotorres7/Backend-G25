@@ -1,16 +1,33 @@
-from fastapi import APIRouter, Depends
+from typing import Optional
+from fastapi import APIRouter, Depends, Query
 from sqlalchemy.orm import Session
 
 from app.core.dependencies import get_db, get_current_user
 from app.models.user import User
 from app.models.application import ApplicationStatus
-from app.schemas.application import ApplicationOut, ApplicationFullOut, UpdateStatusIn
+from app.schemas.application import ApplicationOut, ApplicationFullOut, ApplicationSearchOut, UpdateStatusIn
 from app.services.application_service import list_by_status, update_status, update_status_public
+from app.services.search_service import search_applications
 
 router = APIRouter(prefix="/applications", tags=["applications"])
 
 
 # ── Public endpoints (no auth) ─────────────────────────────────
+
+@router.get("/search", response_model=list[ApplicationSearchOut])
+def search(
+    q: Optional[str] = Query(default=None),
+    semester: Optional[int] = Query(default=None),
+    career: Optional[str] = Query(default=None),
+    db: Session = Depends(get_db),
+):
+    """
+    Application Search – searches across ALL offers by applicant name, career, or offer title.
+    Functional scenario: Staff types a query -> system dynamically queries and returns matches.
+    Quality scenario (Performance): Response time < 2 s regardless of query complexity.
+    """
+    return search_applications(db, q=q, semester=semester, career=career)
+
 
 @router.patch("/{application_id}/status", response_model=ApplicationFullOut)
 def change_status_public(

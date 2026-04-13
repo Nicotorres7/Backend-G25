@@ -15,7 +15,11 @@ router = APIRouter(prefix="/offers", tags=["offers"])
 # ── Public endpoints (no auth) ─────────────────────────────────
 
 @router.post("", response_model=OfferOut, status_code=201)
-def create_offer_route(payload: OfferCreateIn, db: Session = Depends(get_db)):
+def create_offer_route(
+    payload: OfferCreateIn,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
     return create_offer(
         db=db,
         title=payload.title,
@@ -28,6 +32,7 @@ def create_offer_route(payload: OfferCreateIn, db: Session = Depends(get_db)):
         duration_hours=payload.duration_hours,
         is_on_site=payload.is_on_site,
         location=payload.location,
+        staff_id=current_user.id,
     )
 
 

@@ -1,272 +1,318 @@
 from datetime import datetime, timedelta
+
 from sqlalchemy.orm import Session
 
 from app.core.security import hash_password
-from app.models.user import User
-from app.models.offer import Offer
 from app.models.application import Application, ApplicationStatus
+from app.models.offer import Offer
+from app.models.user import User
+
+
+STAFF_PASSWORD = "amogrupo25"
+
+STAFF_SEED = [
+    {
+        "name": "Carlos Andres Escobar",
+        "email": "ca.escobar2434@uniandes.edu.co",
+        "department": "Ingenieria",
+        "language": "es",
+        "is_dark_mode": False,
+    },
+    {
+        "name": "Laura Martinez",
+        "email": "laura.martinez.staff@uniandes.edu.co",
+        "department": "Administracion",
+        "language": "es",
+        "is_dark_mode": True,
+    },
+    {
+        "name": "Felipe Rojas",
+        "email": "felipe.rojas.staff@uniandes.edu.co",
+        "department": "Fisica",
+        "language": "es",
+        "is_dark_mode": False,
+    },
+    {
+        "name": "Natalia Gomez",
+        "email": "natalia.gomez.staff@uniandes.edu.co",
+        "department": "Diseno",
+        "language": "es",
+        "is_dark_mode": True,
+    },
+    {
+        "name": "Santiago Cardenas",
+        "email": "santiago.cardenas.staff@uniandes.edu.co",
+        "department": "Deportes",
+        "language": "es",
+        "is_dark_mode": False,
+    },
+    {
+        "name": "Daniela Prieto",
+        "email": "daniela.prieto.staff@uniandes.edu.co",
+        "department": "Historia",
+        "language": "es",
+        "is_dark_mode": True,
+    },
+    {
+        "name": "Miguel Parra",
+        "email": "miguel.parra.staff@uniandes.edu.co",
+        "department": "Economia",
+        "language": "es",
+        "is_dark_mode": False,
+    },
+    {
+        "name": "Juliana Beltran",
+        "email": "juliana.beltran.staff@uniandes.edu.co",
+        "department": "Arquitectura",
+        "language": "es",
+        "is_dark_mode": True,
+    },
+    {
+        "name": "Tomas Molina",
+        "email": "tomas.molina.staff@uniandes.edu.co",
+        "department": "Derecho",
+        "language": "es",
+        "is_dark_mode": False,
+    },
+    {
+        "name": "Maria Fernanda Ruiz",
+        "email": "maria.ruiz.staff@uniandes.edu.co",
+        "department": "Medicina",
+        "language": "es",
+        "is_dark_mode": True,
+    },
+]
+
+OFFER_TEMPLATES = [
+    {
+        "title": "Apoyo Administrativo",
+        "description": "Apoyo operativo y organizacion de documentos para actividades internas.",
+        "requirements": "Estudiante activo\nBuena organizacion\nAtencion al detalle",
+        "category": "Administrativo",
+        "value_cop": 85000,
+        "duration_hours": 4,
+        "is_on_site": True,
+        "location": "Edificio SD, piso 2",
+    },
+    {
+        "title": "Monitor Academico",
+        "description": "Acompanamiento a estudiantes en sesiones de apoyo academico.",
+        "requirements": "Promedio mayor a 3.8\nBuenas habilidades de comunicacion\nPuntualidad",
+        "category": "Academico",
+        "value_cop": 110000,
+        "duration_hours": 3,
+        "is_on_site": True,
+        "location": "Edificio W, salon 301",
+    },
+    {
+        "title": "Apoyo de Investigacion",
+        "description": "Soporte en recoleccion y organizacion de informacion para proyectos.",
+        "requirements": "Manejo de hojas de calculo\nCapacidad analitica\nResponsabilidad",
+        "category": "Investigacion",
+        "value_cop": 125000,
+        "duration_hours": 5,
+        "is_on_site": False,
+        "location": "Remoto",
+    },
+    {
+        "title": "Asistente de Eventos",
+        "description": "Apoyo logistico en jornadas, talleres y eventos institucionales.",
+        "requirements": "Trabajo en equipo\nDisponibilidad entre semana\nActitud de servicio",
+        "category": "Administrativo",
+        "value_cop": 90000,
+        "duration_hours": 6,
+        "is_on_site": True,
+        "location": "Centro Civico, lobby principal",
+    },
+    {
+        "title": "Auxiliar de Laboratorio",
+        "description": "Preparacion de materiales y acompanamiento en practicas guiadas.",
+        "requirements": "Experiencia previa o curso relacionado\nCuidado del material\nSeguimiento de instrucciones",
+        "category": "Academico",
+        "value_cop": 130000,
+        "duration_hours": 4,
+        "is_on_site": True,
+        "location": "Edificio ML, laboratorio 102",
+    },
+    {
+        "title": "Apoyo de Biblioteca",
+        "description": "Organizacion de material bibliografico y orientacion basica a usuarios.",
+        "requirements": "Orden\nBuen trato al usuario\nResponsabilidad",
+        "category": "Administrativo",
+        "value_cop": 80000,
+        "duration_hours": 4,
+        "is_on_site": True,
+        "location": "Biblioteca General",
+    },
+    {
+        "title": "Asistente de Comunicaciones",
+        "description": "Creacion de piezas, apoyo en contenido y cubrimiento de actividades.",
+        "requirements": "Canva o Figma\nRedaccion clara\nCreatividad",
+        "category": "Investigacion",
+        "value_cop": 115000,
+        "duration_hours": 5,
+        "is_on_site": False,
+        "location": "Remoto",
+    },
+    {
+        "title": "Auxiliar de Bienestar",
+        "description": "Apoyo en jornadas estudiantiles, inscripciones y logistica de bienestar.",
+        "requirements": "Servicio al cliente\nDisponibilidad diurna\nTrabajo colaborativo",
+        "category": "Administrativo",
+        "value_cop": 95000,
+        "duration_hours": 6,
+        "is_on_site": True,
+        "location": "Centro de Bienestar",
+    },
+]
+
+CAREERS = [
+    "Ingenieria de Sistemas",
+    "Ingenieria Industrial",
+    "Administracion",
+    "Economia",
+    "Derecho",
+    "Diseno",
+    "Matematicas",
+    "Fisica",
+    "Medicina",
+    "Historia",
+]
+
+FIRST_NAMES = [
+    "Ana",
+    "Mateo",
+    "Sofia",
+    "Diego",
+    "Valeria",
+    "Juan",
+    "Camila",
+    "Andres",
+    "Paula",
+    "Nicolas",
+]
+
+LAST_NAMES = [
+    "Garcia",
+    "Lopez",
+    "Rodriguez",
+    "Martinez",
+    "Hernandez",
+    "Gomez",
+    "Diaz",
+    "Castro",
+    "Rojas",
+    "Vargas",
+]
+
+AVAILABILITIES = ["part_time", "flexible", "full_time"]
+APPLICATION_STATUSES = [
+    ApplicationStatus.pending,
+    ApplicationStatus.pending,
+    ApplicationStatus.accepted,
+    ApplicationStatus.rejected,
+]
+
+
+def _build_staff_users() -> list[User]:
+    users: list[User] = []
+    for staff_data in STAFF_SEED:
+        users.append(
+            User(
+                name=staff_data["name"],
+                email=staff_data["email"],
+                password_hash=hash_password(STAFF_PASSWORD),
+                department=staff_data["department"],
+                role="staff",
+                language=staff_data["language"],
+                is_dark_mode=staff_data["is_dark_mode"],
+            )
+        )
+    return users
+
+
+def _build_offers(staff_users: list[User]) -> list[Offer]:
+    now = datetime.now().replace(second=0, microsecond=0)
+    offers: list[Offer] = []
+
+    for staff_index, staff in enumerate(staff_users):
+        for template_index, template in enumerate(OFFER_TEMPLATES):
+            date_time = now + timedelta(days=2 + (staff_index * 4) + template_index)
+            offers.append(
+                Offer(
+                    staff_id=staff.id,
+                    title=f'{template["title"]} {staff_index + 1}-{template_index + 1}',
+                    description=f'{template["description"]} Responsable: {staff.name}.',
+                    requirements=template["requirements"],
+                    category=template["category"],
+                    value_cop=template["value_cop"] + (staff_index * 5000),
+                    date_time=date_time,
+                    deadline=date_time - timedelta(days=1),
+                    duration_hours=template["duration_hours"],
+                    is_on_site=template["is_on_site"],
+                    location=template["location"],
+                )
+            )
+
+    return offers
+
+
+def _build_applicant_name(index: int) -> str:
+    first = FIRST_NAMES[index % len(FIRST_NAMES)]
+    last = LAST_NAMES[(index // len(FIRST_NAMES)) % len(LAST_NAMES)]
+    return f"{first} {last} {index + 1}"
+
+
+def _build_student_email(index: int) -> str:
+    return f"applicant{index + 1:02d}@uniandes.edu.co"
+
+
+def _build_pending_applications(offers: list[Offer]) -> list[Application]:
+    applications: list[Application] = []
+
+    for offer_index, offer in enumerate(offers):
+        for offset, status in enumerate(APPLICATION_STATUSES):
+            applicant_index = (offer_index * len(APPLICATION_STATUSES)) + offset
+            applications.append(
+                Application(
+                    offer_id=offer.id,
+                    offer_title=offer.title,
+                    student_name=_build_applicant_name(applicant_index),
+                    student_email=_build_student_email(applicant_index),
+                    applicant_name=_build_applicant_name(applicant_index),
+                    career=CAREERS[applicant_index % len(CAREERS)],
+                    semester=(applicant_index % 8) + 2,
+                    gpa=round(3.2 + ((applicant_index % 15) * 0.1), 2),
+                    availability=AVAILABILITIES[applicant_index % len(AVAILABILITIES)],
+                    motivation_letter=(
+                        f"Quiero aplicar a {offer.title} para ganar experiencia "
+                        "y apoyar a la Universidad de los Andes."
+                    ),
+                    status=status,
+                )
+            )
+
+    return applications
 
 
 def seed_if_empty(db: Session):
     if db.query(Offer).first():
         return
 
-    # ── Staff user ────────────────────────────────────────────────
-    staff = db.query(User).first()
-    if not staff:
-        staff = User(
-            name="Juan Pérez",
-            email="juan.perez@uniandes.edu.co",
-            password_hash=hash_password("123456"),
-            department="Ingeniería",
-            role="staff",
-            language="es",
-            is_dark_mode=False,
-        )
-        db.add(staff)
-        db.commit()
+    staff_users = _build_staff_users()
+    db.add_all(staff_users)
+    db.commit()
+
+    for staff in staff_users:
         db.refresh(staff)
 
-    now = datetime.now()
-
-    # ── Offers (5 total, varied categories) ───────────────────────
-    offer1 = Offer(
-        staff_id=staff.id,
-        title="Apoyo Biblioteca",
-        description="Apoyo en tareas operativas y atención básica durante eventos universitarios.",
-        requirements="Estudiante activo\nDisponibilidad fines de semana\nBuena presentación personal",
-        category="Administrativo",
-        value_cop=80000,
-        date_time=now + timedelta(days=2),
-        deadline=now + timedelta(days=1),
-        duration_hours=4,
-        is_on_site=True,
-        location="Biblioteca General, Edificio ML, Piso 1",
-    )
-    offer2 = Offer(
-        staff_id=staff.id,
-        title="Asistente Laboratorio Física",
-        description="Ayuda con inventario y preparación de materiales para prácticas de física.",
-        requirements="Curso Física I aprobado\nManejo de equipos de laboratorio\nCuidado y precisión",
-        category="Académico",
-        value_cop=120000,
-        date_time=now + timedelta(days=5),
-        deadline=now + timedelta(days=3),
-        duration_hours=6,
-        is_on_site=True,
-        location="Edificio Mario Laserna, Lab 102",
-    )
-    offer3 = Offer(
-        staff_id=staff.id,
-        title="Monitor Cálculo Integral",
-        description="Acompañamiento académico a estudiantes de Cálculo Integral en sesiones de tutoría.",
-        requirements="Cálculo Integral aprobado con nota >= 4.0\nHabilidades pedagógicas\nPaciencia",
-        category="Académico",
-        value_cop=100000,
-        date_time=now + timedelta(days=7),
-        deadline=now + timedelta(days=5),
-        duration_hours=3,
-        is_on_site=True,
-        location="Edificio W, Salón 301",
-    )
-    offer4 = Offer(
-        staff_id=staff.id,
-        title="Diseñador Redes Sociales",
-        description="Creación de contenido visual para las redes sociales de Bienestar Universitario.",
-        requirements="Manejo de Canva o Figma\nCreatividad\nDisponibilidad 10 hrs/semana",
-        category="Comunicaciones",
-        value_cop=150000,
-        date_time=now + timedelta(days=10),
-        deadline=now + timedelta(days=8),
-        duration_hours=10,
-        is_on_site=False,
-        location="Remoto",
-    )
-    offer5 = Offer(
-        staff_id=staff.id,
-        title="Auxiliar Deportivo",
-        description="Apoyo logístico en eventos deportivos y torneos internos de la universidad.",
-        requirements="Interés en deportes\nDisponibilidad sábados\nTrabajo en equipo",
-        category="Deporte",
-        value_cop=70000,
-        date_time=now + timedelta(days=3),
-        deadline=now + timedelta(days=2),
-        duration_hours=5,
-        is_on_site=True,
-        location="Centro Deportivo Uniandes",
-    )
-
-    db.add_all([offer1, offer2, offer3, offer4, offer5])
+    offers = _build_offers(staff_users)
+    db.add_all(offers)
     db.commit()
-    for o in [offer1, offer2, offer3, offer4, offer5]:
-        db.refresh(o)
 
-    # ── Seed student — used to test GET /applications/my ──────────
-    student = User(
-        name="Juan Perez",
-        email="juan.perez.student@uniandes.edu.co",
-        password_hash=hash_password("123456"),
-        department="Ingeniería",
-        role="student",
-        language="es",
-        is_dark_mode=False,
-    )
-    db.add(student)
-    db.commit()
-    db.refresh(student)
+    for offer in offers:
+        db.refresh(offer)
 
-    # ── Applications (15 total + 3 for seed student) ──────────────
-    apps = [
-        # Offer 1: Apoyo Biblioteca — 4 apps
-        Application(
-            offer_id=offer1.id, offer_title=offer1.title,
-            student_name="Ana Gómez", student_email="ana.gomez@uniandes.edu.co",
-            applicant_name="Ana Gómez", career="Administración de Empresas",
-            semester=6, gpa=4.2, availability="part_time",
-            motivation_letter="Me interesa apoyar la biblioteca y mejorar mis habilidades organizativas.",
-            status=ApplicationStatus.accepted,
-        ),
-        Application(
-            offer_id=offer1.id, offer_title=offer1.title,
-            student_name="Mateo Ríos", student_email="mateo.rios@uniandes.edu.co",
-            applicant_name="Mateo Ríos", career="Ingeniería Industrial",
-            semester=4, gpa=3.8, availability="flexible",
-            motivation_letter="Busco experiencia laboral y contribuir al ambiente universitario.",
-            status=ApplicationStatus.accepted,
-        ),
-        Application(
-            offer_id=offer1.id, offer_title=offer1.title,
-            student_name="Sofía Mendoza", student_email="sofia.mendoza@uniandes.edu.co",
-            applicant_name="Sofía Mendoza", career="Literatura",
-            semester=7, gpa=4.5, availability="full_time",
-            motivation_letter="Amo los libros y quiero aportar a la comunidad lectora.",
-            status=ApplicationStatus.rejected,
-        ),
-        Application(
-            offer_id=offer1.id, offer_title=offer1.title,
-            student_name="Diego Vargas", student_email="diego.vargas@uniandes.edu.co",
-            applicant_name="Diego Vargas", career="Derecho",
-            semester=3, gpa=3.6, availability="part_time",
-            motivation_letter="Necesito la experiencia laboral para mi hoja de vida.",
-            status=ApplicationStatus.pending,
-        ),
-
-        # Offer 2: Lab Física — 3 apps
-        Application(
-            offer_id=offer2.id, offer_title=offer2.title,
-            student_name="Laura Díaz", student_email="laura.diaz@uniandes.edu.co",
-            applicant_name="Laura Díaz", career="Física",
-            semester=8, gpa=4.7, availability="full_time",
-            motivation_letter="Tengo experiencia en laboratorio y deseo apoyar a estudiantes de semestres menores.",
-            status=ApplicationStatus.accepted,
-        ),
-        Application(
-            offer_id=offer2.id, offer_title=offer2.title,
-            student_name="Carlos Herrera", student_email="carlos.herrera@uniandes.edu.co",
-            applicant_name="Carlos Herrera", career="Ingeniería Eléctrica",
-            semester=5, gpa=3.5, availability="part_time",
-            motivation_letter="Quiero poner en práctica los conocimientos de física que he adquirido.",
-            status=ApplicationStatus.rejected,
-        ),
-        Application(
-            offer_id=offer2.id, offer_title=offer2.title,
-            student_name="Valentina Castro", student_email="valentina.castro@uniandes.edu.co",
-            applicant_name="Valentina Castro", career="Ingeniería Mecánica",
-            semester=6, gpa=4.0, availability="flexible",
-            motivation_letter="Me apasiona la física aplicada y quiero experiencia en laboratorio.",
-            status=ApplicationStatus.pending,
-        ),
-
-        # Offer 3: Monitor Cálculo — 3 apps
-        Application(
-            offer_id=offer3.id, offer_title=offer3.title,
-            student_name="Andrés Morales", student_email="andres.morales@uniandes.edu.co",
-            applicant_name="Andrés Morales", career="Matemáticas",
-            semester=7, gpa=4.8, availability="part_time",
-            motivation_letter="He sido monitor antes y quiero seguir ayudando a otros estudiantes.",
-            status=ApplicationStatus.accepted,
-        ),
-        Application(
-            offer_id=offer3.id, offer_title=offer3.title,
-            student_name="Camila Torres", student_email="camila.torres@uniandes.edu.co",
-            applicant_name="Camila Torres", career="Ingeniería de Sistemas",
-            semester=5, gpa=4.3, availability="flexible",
-            motivation_letter="Cálculo es mi materia favorita y me gustaría compartir ese conocimiento.",
-            status=ApplicationStatus.accepted,
-        ),
-        Application(
-            offer_id=offer3.id, offer_title=offer3.title,
-            student_name="Julián Ospina", student_email="julian.ospina@uniandes.edu.co",
-            applicant_name="Julián Ospina", career="Ingeniería Civil",
-            semester=4, gpa=3.9, availability="full_time",
-            motivation_letter="Quiero reforzar mis conocimientos de cálculo ayudando a otros.",
-            status=ApplicationStatus.pending,
-        ),
-
-        # Offer 4: Diseñador Redes — 3 apps
-        Application(
-            offer_id=offer4.id, offer_title=offer4.title,
-            student_name="Isabella Ruiz", student_email="isabella.ruiz@uniandes.edu.co",
-            applicant_name="Isabella Ruiz", career="Diseño",
-            semester=6, gpa=4.1, availability="flexible",
-            motivation_letter="Tengo portafolio de diseño y experiencia con Figma y redes sociales.",
-            status=ApplicationStatus.rejected,
-        ),
-        Application(
-            offer_id=offer4.id, offer_title=offer4.title,
-            student_name="Nicolás Peña", student_email="nicolas.pena@uniandes.edu.co",
-            applicant_name="Nicolás Peña", career="Comunicación Social",
-            semester=3, gpa=3.4, availability="part_time",
-            motivation_letter="Me encanta crear contenido y tengo experiencia con Canva.",
-            status=ApplicationStatus.rejected,
-        ),
-        Application(
-            offer_id=offer4.id, offer_title=offer4.title,
-            student_name="Mariana López", student_email="mariana.lopez@uniandes.edu.co",
-            applicant_name="Mariana López", career="Arte",
-            semester=8, gpa=4.6, availability="full_time",
-            motivation_letter="El diseño digital es mi especialidad, puedo aportar mucho.",
-            status=ApplicationStatus.pending,
-        ),
-
-        # Offer 5: Auxiliar Deportivo — 2 apps
-        Application(
-            offer_id=offer5.id, offer_title=offer5.title,
-            student_name="Santiago Mejía", student_email="santiago.mejia@uniandes.edu.co",
-            applicant_name="Santiago Mejía", career="Ingeniería de Sistemas",
-            semester=2, gpa=3.7, availability="flexible",
-            motivation_letter="Practico fútbol y voleibol, me encantaría ayudar en los torneos.",
-            status=ApplicationStatus.accepted,
-        ),
-        Application(
-            offer_id=offer5.id, offer_title=offer5.title,
-            student_name="Paula Sánchez", student_email="paula.sanchez@uniandes.edu.co",
-            applicant_name="Paula Sánchez", career="Medicina",
-            semester=4, gpa=4.4, availability="part_time",
-            motivation_letter="Me interesa el deporte y puedo ayudar con primeros auxilios si se necesita.",
-            status=ApplicationStatus.pending,
-        ),
-
-        # Seed student applications — covers all 3 statuses for MyApplicationsScreen testing
-        Application(
-            offer_id=offer1.id,
-            student_name=student.name,
-            student_email=student.email,
-            status=ApplicationStatus.accepted,
-        ),
-        Application(
-            offer_id=offer2.id,
-            student_name=student.name,
-            student_email=student.email,
-            status=ApplicationStatus.pending,
-        ),
-        Application(
-            offer_id=offer3.id,
-            student_name=student.name,
-            student_email=student.email,
-            status=ApplicationStatus.rejected,
-        ),
-    ]
-
-    db.add_all(apps)
+    applications = _build_pending_applications(offers)
+    db.bulk_save_objects(applications)
     db.commit()

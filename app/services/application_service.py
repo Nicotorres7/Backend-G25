@@ -155,3 +155,65 @@ def top_offers_by_applications(db: Session) -> list[dict]:
         .all()
     )
     return [{"title": r.title, "total": r.total} for r in rows]
+
+
+def get_staff_apps_by_offer(
+    db: Session,
+    user: User,
+    offer_id: int,
+) -> list[Application]:
+    """
+    Returns applications filtered by offer lifecycle state:
+      upcoming  -> all statuses (pending / accepted / rejected)
+      active    -> only accepted
+      closed    -> only accepted
+    Auth: offer must belong to user (enforced via get_offer_detail).
+    """
+    from app.services.offer_service import get_offer_detail, compute_offer_state
+    offer = get_offer_detail(db, user, offer_id)
+    state = compute_offer_state(offer)
+
+    query = db.query(Application).filter(Application.offer_id == offer_id)
+    if state in ("active", "closed"):
+        query = query.filter(Application.status == ApplicationStatus.accepted)
+    return query.order_by(Application.gpa.desc()).all()
+
+
+def rate_application(
+    db: Session,
+    user: User,
+    application_id: int,
+    rating: float,
+    rating_feedback: str,
+    rating_punctuality: float,
+    rating_quality: float,
+    rating_attitude: float,
+) -> Application:
+    from app.services.offer_service import get_offer_by_id, compute_offer_state
+    from datetime import datetime, timezone as _tz
+    app = db.query(Application).filter(Application.id == application_id).first()
+    if not app:
+        raise NotFound("Application not found")
+    offer = get_offer_by_id(db, app.offer_id)
+    if offer.staff_id != user.id:
+        raise Forbidden("Not your application")
+    state = compute_offer_state(offer)
+    if state != "closed":
+        from fastapi import HTTPException
+        raise HTTPException(status_code=400, detail="Can only rate applications for closed offers")
+    if app.status != ApplicationStatus.accepted:
+        from fastapi import HTTPException
+        raise HTTPException(status_code=400, detail="Can only rate accepted applicants")
+
+    app.is_completed = True
+    app.completed_at = datetime.now(_tz.utc)
+    app.rating = rating
+    app.rating_feedback = rating_feedback
+    app.rating_punctuality = rating_punctuality
+    app.rating_quality = rating_quality
+    app.rating_attitude = rating_attitude
+    app.rated_at = datetime.now(_tz.utc)
+    db.add(app)
+    db.commit()
+    db.refresh(app)
+    return app

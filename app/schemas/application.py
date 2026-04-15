@@ -28,6 +28,14 @@ class ApplicationFullOut(BaseModel):
     availability: str
     motivation_letter: str
     status: Status
+    is_completed: bool
+    completed_at: Optional[datetime] = None
+    rating: Optional[float] = None
+    rating_feedback: Optional[str] = None
+    rating_punctuality: Optional[float] = None
+    rating_quality: Optional[float] = None
+    rating_attitude: Optional[float] = None
+    rated_at: Optional[datetime] = None
     created_at: datetime
 
 
@@ -55,6 +63,7 @@ class UpdateStatusIn(BaseModel):
 
 class OfferSummary(BaseModel):
     """Minimal offer data embedded in each student application card."""
+    model_config = ConfigDict(from_attributes=True)
     id: int
     title: str
     value_cop: int
@@ -62,20 +71,15 @@ class OfferSummary(BaseModel):
     date_time: datetime
     is_on_site: bool
 
-    class Config:
-        from_attributes = True
-
 
 class MyApplicationOut(BaseModel):
     """Single application as seen by the student, enriched with offer details."""
+    model_config = ConfigDict(from_attributes=True)
     id: int
     offer_id: int
     status: Status
     created_at: datetime
     offer: OfferSummary
-
-    class Config:
-        from_attributes = True
 
 
 class ApplicationStats(BaseModel):
@@ -103,3 +107,11 @@ class ApplyIn(BaseModel):
 class TopOfferOut(BaseModel):
     title: str
     total: int
+
+
+class RateApplicationIn(BaseModel):
+    rating: float
+    rating_feedback: str
+    rating_punctuality: float
+    rating_quality: float
+    rating_attitude: float

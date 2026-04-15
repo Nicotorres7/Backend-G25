@@ -24,12 +24,12 @@ from app.models.application import ApplicationStatus
 from app.schemas.application import (
     ApplicationOut, ApplicationFullOut, UpdateStatusIn,
     ApplyIn, TopOfferOut, MyApplicationsResponse,
-    ApplicationSearchOut
+    ApplicationSearchOut, RateApplicationIn
 )
 from app.services.application_service import (
     list_by_status, update_status, update_status_public,
     apply_to_offer, list_my_applications,
-    get_my_applications, top_offers_by_applications
+    get_my_applications, top_offers_by_applications, rate_application
 )
 from app.services.search_service import search_applications
 
@@ -112,7 +112,7 @@ def accepted(db: Session = Depends(get_db), current_user: User = Depends(get_cur
 
 @router.get("/rejected", response_model=list[ApplicationOut])
 def rejected(db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
-    return list_by_status(db, current_user, ApplicationStatus.accepted)
+    return list_by_status(db, current_user, ApplicationStatus.rejected)
 
 
 @router.put("/{application_id}/status", response_model=ApplicationOut)
@@ -123,3 +123,22 @@ def change_status(
     current_user: User = Depends(get_current_user),
 ):
     return update_status(db, current_user, application_id, ApplicationStatus(payload.status))
+
+
+@router.post("/{application_id}/rate", response_model=ApplicationFullOut)
+def rate_application_route(
+    application_id: int,
+    payload: RateApplicationIn,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    return rate_application(
+        db=db,
+        user=current_user,
+        application_id=application_id,
+        rating=payload.rating,
+        rating_feedback=payload.rating_feedback,
+        rating_punctuality=payload.rating_punctuality,
+        rating_quality=payload.rating_quality,
+        rating_attitude=payload.rating_attitude,
+    )

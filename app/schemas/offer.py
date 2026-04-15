@@ -1,6 +1,6 @@
 import re
 from datetime import datetime
-from typing import Optional
+from typing import Literal, Optional
 
 from pydantic import BaseModel, ConfigDict, field_validator
 
@@ -89,6 +89,9 @@ class OfferUpdateIn(BaseModel):
         return _validate_schedule_value(value)
 
 
+OfferState = Literal["upcoming", "active", "closed"]
+
+
 class OfferOut(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
@@ -103,4 +106,7 @@ class OfferOut(BaseModel):
     duration_hours: int
     is_on_site: bool
     location: str
+    closed_at: Optional[datetime]
+    closed_early: bool
+    state: OfferState  # injected by service layer before serialization
     created_at: datetime

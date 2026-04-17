@@ -125,11 +125,14 @@ def apply_to_offer(db: Session, user: User, offer_id: int) -> Application:
         raise HTTPException(status_code=409, detail="Already applied to this offer")
 
     app = Application(
-        offer_id=offer_id,
-        student_name=user.name,
-        student_email=user.email,
-        status=ApplicationStatus.pending
-    )
+    offer_id=offer_id,
+    offer_title=offer.title,
+    student_name=user.name,
+    student_email=user.email,
+    applicant_name=user.name,
+    career=user.department,
+    status=ApplicationStatus.pending
+)
     db.add(app)
     db.commit()
     db.refresh(app)

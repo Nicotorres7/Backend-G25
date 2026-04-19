@@ -131,6 +131,7 @@ def apply_to_offer(db: Session, user: User, payload: "ApplyIn") -> Application: 
 
     app = Application(
         offer_id=payload.offer_id,
+        offer_title=offer.title,
         student_name=user.name,
         student_email=user.email,
         applicant_name=payload.applicant_name,

@@ -106,7 +106,9 @@ class OfferOut(BaseModel):
     duration_hours: int
     is_on_site: bool
     location: str
+    latitude: Optional[float] = None
+    longitude: Optional[float] = None
     closed_at: Optional[datetime]
     closed_early: bool
-    state: OfferState  # injected by service layer before serialization
+    state: OfferState
     created_at: datetime

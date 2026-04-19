@@ -70,7 +70,7 @@ def apply(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    return apply_to_offer(db, current_user, payload.offer_id)
+    return apply_to_offer(db, current_user, payload)
 
 
 @router.get(
@@ -81,16 +81,18 @@ def apply(
         "Returns all applications submitted by the authenticated student, "
         "enriched with offer details and aggregated status stats. "
         "Accepts an optional ?status filter (pending | accepted | rejected). "
-        "Stats always reflect totals across ALL applications regardless of the active filter."
+        "Stats always reflect totals across ALL applications regardless of the active filter. "
+        "Use ?detailed=true to include full application profile (student info, ratings, feedback)."
     ),
 )
 def my_applications(
     status: Optional[str] = Query(default=None, pattern="^(pending|accepted|rejected)$"),
+    detailed: bool = Query(default=False, description="Include full application details (profile, ratings, feedback)"),
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
     status_filter = ApplicationStatus(status) if status else None
-    return list_my_applications(db, current_user, status_filter)
+    return list_my_applications(db, current_user, status_filter, detailed=detailed)
 
 
 @router.get("/bq/top-offers", response_model=list[TopOfferOut])

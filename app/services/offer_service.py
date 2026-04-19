@@ -1,4 +1,4 @@
-from datetime import datetime, timezone, timedelta
+from datetime import datetime, timedelta
 from sqlalchemy.orm import Session
 from app.models.offer import Offer
 from app.models.user import User
@@ -6,19 +6,23 @@ from app.utils.exceptions import NotFound, Forbidden
 
 
 def compute_offer_state(offer: Offer) -> str:
-    """
+    """Compute offer state based on naive local time.
+
+    All datetime comparisons use naive local time (no timezone info).
+    offer.date_time is stored as naive in the DB (Flutter sends local ISO string).
+
     upcoming: now < date_time  AND closed_at is None
     active:   date_time <= now < date_time + duration_hours  AND closed_at is None
     closed:   closed_at is not None  OR  now >= date_time + duration_hours
     """
-    now = datetime.now(timezone.utc)
-
+    now = datetime.now()  # naive local time — matches naive DB storage
     dt = offer.date_time
-    if dt.tzinfo is None:
-        dt = dt.replace(tzinfo=timezone.utc)
+    if dt.tzinfo is not None:
+        dt = dt.replace(tzinfo=None)  # strip tz for consistent naive comparison
 
     end = dt + timedelta(hours=offer.duration_hours)
 
+    # closed_at is only checked for existence here, not compared to now
     if offer.closed_at is not None or now >= end:
         return "closed"
     if now >= dt:
@@ -95,7 +99,7 @@ def close_offer(db: Session, user: User, offer_id: int) -> Offer:
         raise Forbidden("Not your offer")
     if offer.closed_at is not None:
         return _with_state(offer)  # already closed, idempotent
-    offer.closed_at = datetime.now(timezone.utc)
+    offer.closed_at = datetime.now()
     offer.closed_early = True
     db.add(offer)
     db.commit()

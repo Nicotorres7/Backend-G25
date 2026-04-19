@@ -73,13 +73,37 @@ class OfferSummary(BaseModel):
 
 
 class MyApplicationOut(BaseModel):
-    """Single application as seen by the student, enriched with offer details."""
+    """Single application as seen by the student, enriched with offer details.
+
+    When ?detailed=false (default): Returns only basic application info for backward compatibility.
+    When ?detailed=true: Returns full student profile and rating details.
+    """
     model_config = ConfigDict(from_attributes=True)
+
+    # Basic fields (always present)
     id: int
     offer_id: int
     status: Status
     created_at: datetime
     offer: OfferSummary
+
+    # Student profile fields (present when detailed=true, None otherwise)
+    applicant_name: Optional[str] = None
+    career: Optional[str] = None
+    semester: Optional[int] = None
+    gpa: Optional[float] = None
+    availability: Optional[str] = None
+    motivation_letter: Optional[str] = None
+
+    # Completion & rating fields (present when completed and detailed=true)
+    is_completed: Optional[bool] = None
+    completed_at: Optional[datetime] = None
+    rating: Optional[float] = None
+    rating_feedback: Optional[str] = None
+    rating_punctuality: Optional[float] = None
+    rating_quality: Optional[float] = None
+    rating_attitude: Optional[float] = None
+    rated_at: Optional[datetime] = None
 
 
 class ApplicationStats(BaseModel):
@@ -102,6 +126,12 @@ class MyApplicationsResponse(BaseModel):
 
 class ApplyIn(BaseModel):
     offer_id: int
+    applicant_name: str
+    career: str
+    semester: int
+    gpa: float
+    availability: str
+    motivation_letter: str
 
 
 class TopOfferOut(BaseModel):

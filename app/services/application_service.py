@@ -28,6 +28,7 @@ def list_my_applications(
     db: Session,
     user: User,
     status_filter: Optional[ApplicationStatus] = None,
+    detailed: bool = False,
 ) -> dict:
     base_query = db.query(Application).filter(Application.student_email == user.email)
 
@@ -38,6 +39,8 @@ def list_my_applications(
 
     for application in applications:
         application.offer = db.query(Offer).filter(Offer.id == application.offer_id).first()
+        # If detailed mode is enabled, ensure all fields are populated from the model
+        # (they already are since SQLAlchemy loads them from DB)
 
     all_apps = base_query.all()
     stats = {
@@ -108,16 +111,18 @@ def update_status_public(db: Session, application_id: int, new_status: Applicati
     return app
 
 
-def apply_to_offer(db: Session, user: User, offer_id: int) -> Application:
+def apply_to_offer(db: Session, user: User, payload: "ApplyIn") -> Application:  # type: ignore
+    from app.schemas.application import ApplyIn
+
     if user.role != "student":
         raise Forbidden("Only students can apply to offers")
 
-    offer = db.query(Offer).filter(Offer.id == offer_id).first()
+    offer = db.query(Offer).filter(Offer.id == payload.offer_id).first()
     if not offer:
         raise NotFound("Offer not found")
 
     existing = db.query(Application).filter(
-        Application.offer_id == offer_id,
+        Application.offer_id == payload.offer_id,
         Application.student_email == user.email
     ).first()
     if existing:
@@ -125,9 +130,16 @@ def apply_to_offer(db: Session, user: User, offer_id: int) -> Application:
         raise HTTPException(status_code=409, detail="Already applied to this offer")
 
     app = Application(
-        offer_id=offer_id,
+        offer_id=payload.offer_id,
+        offer_title=offer.title,
         student_name=user.name,
         student_email=user.email,
+        applicant_name=payload.applicant_name,
+        career=payload.career,
+        semester=payload.semester,
+        gpa=payload.gpa,
+        availability=payload.availability,
+        motivation_letter=payload.motivation_letter,
         status=ApplicationStatus.pending
     )
     db.add(app)

@@ -2,12 +2,13 @@ from fastapi import APIRouter, Depends, Query
 from sqlalchemy.orm import Session
 
 from app.core.dependencies import get_db
-from app.schemas.analytics import OfferAcceptanceRateOut, OverallInsightsOut, GpaByOfferOut, TopApplicantOut
+from app.schemas.analytics import OfferAcceptanceRateOut, OverallInsightsOut, GpaByOfferOut, TopApplicantOut, GpaHighRateOut
 from app.services.analytics_service import (
     get_acceptance_rate_by_offer,
     get_overall_insights,
     get_gpa_by_offer,
     get_top_applicants,
+    get_gpa_high_rate,
 )
 
 router = APIRouter(prefix="/analytics", tags=["analytics"])
@@ -48,3 +49,12 @@ def top_applicants(
     Top Applicants Leaderboard – returns the highest-GPA applicants across all offers.
     """
     return get_top_applicants(db, limit=limit)
+
+
+@router.get("/gpa-high-rate", response_model=list[GpaHighRateOut])
+def gpa_high_rate(db: Session = Depends(get_db)):
+    """
+    BQ9 (David Hernandez) – Percentage of applicants with GPA >= 4.0 per offer.
+    Helps staff identify which offers attract top-performing students.
+    """
+    return get_gpa_high_rate(db)

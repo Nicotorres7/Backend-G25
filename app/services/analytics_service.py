@@ -127,6 +127,47 @@ def get_top_applicants(db: Session, limit: int = 10) -> list[dict]:
     return ranked[:limit]
 
 
+def get_gpa_high_rate(db: Session) -> list[dict]:
+    """
+    BQ9 – Percentage of applicants with GPA >= 4.0 per offer.
+    David Hernandez – Sprint 3
+    """
+    rows = (
+        db.query(
+            Offer.id,
+            Offer.title,
+            Offer.category,
+            sql_func.count(Application.id).label("total"),
+            sql_func.count(
+                sql_func.nullif(Application.gpa < 4.0, True)
+            ).label("high_gpa"),
+        )
+        .join(Application, Application.offer_id == Offer.id)
+        .group_by(Offer.id, Offer.title, Offer.category)
+        .order_by(
+            sql_func.count(
+                sql_func.nullif(Application.gpa < 4.0, True)
+            ).desc()
+        )
+        .all()
+    )
+
+    results = []
+    for row in rows:
+        total = row.total or 0
+        high = row.high_gpa or 0
+        pct = round((high / total) * 100, 2) if total > 0 else 0.0
+        results.append({
+            "offer_id": row.id,
+            "offer_title": row.title,
+            "category": row.category,
+            "total_applicants": total,
+            "high_gpa_count": high,
+            "high_gpa_percentage": pct,
+        })
+    return results
+
+
 def get_overall_insights(db: Session) -> dict:
     """
     Smart insights – aggregated KPIs across all offers.

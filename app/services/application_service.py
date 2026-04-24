@@ -229,3 +229,25 @@ def rate_application(
     db.commit()
     db.refresh(app)
     return app
+
+def avg_applications_per_semester(db: Session) -> list[dict]:
+    rows = (
+        db.query(
+            Application.semester,
+            sqlfunc.count(Application.id).label("total_applications"),
+            sqlfunc.count(sqlfunc.distinct(Application.student_email)).label("total_students"),
+        )
+        .filter(Application.semester.isnot(None))
+        .group_by(Application.semester)
+        .order_by(Application.semester.asc())
+        .all()
+    )
+    return [
+        {
+            "semester": r.semester,
+            "avg_applications": round(r.total_applications / r.total_students, 2) if r.total_students > 0 else 0.0,
+            "total_students": r.total_students,
+            "total_applications": r.total_applications,
+        }
+        for r in rows
+    ]

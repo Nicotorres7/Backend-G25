@@ -145,3 +145,9 @@ class RateApplicationIn(BaseModel):
     rating_punctuality: float
     rating_quality: float
     rating_attitude: float
+
+class AvgApplicationsPerSemesterOut(BaseModel):
+    semester: int
+    avg_applications: float
+    total_students: int
+    total_applications: int

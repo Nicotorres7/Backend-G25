@@ -168,6 +168,36 @@ def get_gpa_high_rate(db: Session) -> list[dict]:
     return results
 
 
+def get_applications_per_semester(db: Session) -> list[dict]:
+    """
+    BQ10 – Average applications per student grouped by semester.
+    Guillermo Hernández – Sprint 3.
+    Groups applications by the applicant's semester, counts total applications
+    and unique students per group, then computes the average.
+    """
+    rows = (
+        db.query(
+            Application.semester,
+            sql_func.count(Application.id).label("total_applications"),
+            sql_func.count(sql_func.distinct(Application.applicant_name)).label("unique_students"),
+        )
+        .group_by(Application.semester)
+        .order_by(Application.semester.asc())
+        .all()
+    )
+
+    results = []
+    for row in rows:
+        avg = round(row.total_applications / row.unique_students, 2) if row.unique_students > 0 else 0.0
+        results.append({
+            "semester": row.semester,
+            "total_applications": row.total_applications,
+            "unique_students": row.unique_students,
+            "avg_applications_per_student": avg,
+        })
+    return results
+
+
 def get_overall_insights(db: Session) -> dict:
     """
     Smart insights – aggregated KPIs across all offers.

@@ -69,3 +69,19 @@ class GpaHighRateOut(BaseModel):
     total_applicants: int
     high_gpa_count: int
     high_gpa_percentage: float
+
+
+class ApplicationsPerSemesterOut(BaseModel):
+    """
+    BQ10: Average number of applications submitted per student, grouped by semester.
+    Functional scenario: Staff opens analytics -> system groups applications by student
+    semester, counts unique students and total applications per group -> returns average
+    applications per student for each semester level.
+    Quality scenario (Performance): Response time < 2 s for up to 500 applications.
+    """
+    model_config = ConfigDict(from_attributes=True)
+
+    semester: int
+    total_applications: int
+    unique_students: int
+    avg_applications_per_student: float

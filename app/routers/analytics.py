@@ -4,13 +4,14 @@ from sqlalchemy.orm import Session
 from app.core.dependencies import get_db
 from app.models.offer import Offer
 from app.models.application import Application
-from app.schemas.analytics import OfferAcceptanceRateOut, OverallInsightsOut, GpaByOfferOut, TopApplicantOut, GpaHighRateOut
+from app.schemas.analytics import OfferAcceptanceRateOut, OverallInsightsOut, GpaByOfferOut, TopApplicantOut, GpaHighRateOut, ApplicationsPerSemesterOut
 from app.services.analytics_service import (
     get_acceptance_rate_by_offer,
     get_overall_insights,
     get_gpa_by_offer,
     get_top_applicants,
     get_gpa_high_rate,
+    get_applications_per_semester,
 )
 
 router = APIRouter(prefix="/analytics", tags=["analytics"])
@@ -103,3 +104,13 @@ def gpa_high_rate(db: Session = Depends(get_db)):
     Helps staff identify which offers attract top-performing students.
     """
     return get_gpa_high_rate(db)
+
+
+@router.get("/applications-per-semester", response_model=list[ApplicationsPerSemesterOut])
+def applications_per_semester(db: Session = Depends(get_db)):
+    """
+    BQ10 (Guillermo Hernández) – Average applications per student grouped by semester.
+    Answers: how many applications does each student submit on average per semester?
+    Helps the institution understand engagement patterns across academic stages.
+    """
+    return get_applications_per_semester(db)

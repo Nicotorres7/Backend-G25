@@ -103,7 +103,7 @@ def update_profile(
     return updated_user
 
 
-# Sprint 4: Caching — carnet upload endpoint
+# Sprint 3: Caching — carnet upload endpoint
 # Uploads image to Supabase Storage bucket "Carnets" and saves public URL in users table.
 # If user already has a carnet, the old file is deleted from Storage before uploading the new one.
 # The URL is then loaded in StudentProfileScreen using Coil, which caches the image
@@ -190,4 +190,4 @@ async def delete_carnet(
     db.commit()
     db.refresh(current_user)
     return current_user
-# Sprint 4: Caching — END carnet endpoints      
+# Sprint 3: Caching — END carnet endpoints      

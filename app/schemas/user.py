@@ -1,6 +1,6 @@
 import re
 from pydantic import BaseModel, EmailStr, field_validator
-from typing import Literal
+from typing import Literal, Optional
 
 DEPARTMENTS = Literal["Ingeniería", "Ciencias Sociales", "Ciencias Básicas", "Administrativo", "Artes", "Deporte"]
 LANGS = Literal["es", "en"]
@@ -16,6 +16,8 @@ class UserOut(BaseModel):
     role: str
     language: str
     is_dark_mode: bool
+    # Sprint 4: Caching — carnet image URL
+    profile_picture: Optional[str] = None
 
     class Config:
         from_attributes = True

@@ -5,7 +5,8 @@ class Settings(BaseSettings):
     model_config = SettingsConfigDict(
         env_file=".env",
         env_file_encoding="utf-8",
-        extra="ignore",  # <- permite variables extra sin romper
+        
+        extra="ignore",
     )
 
     DATABASE_URL: str = "sqlite:///./goatly.db"
@@ -22,7 +23,11 @@ class Settings(BaseSettings):
         "http://localhost:5555"
     )
 
-    SEED_ON_STARTUP: bool = False  # <- NUEVO
+    SEED_ON_STARTUP: bool = False
+
+    # Sprint 4: Caching — Supabase Storage credentials for carnet upload
+    SUPABASE_URL: str = ""
+    SUPABASE_SERVICE_KEY: str = ""
 
     def cors_list(self) -> list[str]:
         return [o.strip() for o in self.CORS_ORIGINS.split(",") if o.strip()]

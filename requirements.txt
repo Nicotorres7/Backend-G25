@@ -2,6 +2,7 @@ fastapi
 uvicorn[standard]
 sqlalchemy
 psycopg2-binary
+python-multipart
 alembic
 python-dotenv
 pydantic[email]

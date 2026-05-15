@@ -24,12 +24,12 @@ from app.models.application import ApplicationStatus
 from app.schemas.application import (
     ApplicationOut, ApplicationFullOut, UpdateStatusIn,
     ApplyIn, TopOfferOut, MyApplicationsResponse,
-    ApplicationSearchOut, RateApplicationIn
+    ApplicationSearchOut, RateApplicationIn, AvgApplicationsPerSemesterOut
 )
 from app.services.application_service import (
     list_by_status, update_status, update_status_public,
     apply_to_offer, list_my_applications,
-    get_my_applications, top_offers_by_applications, rate_application
+    get_my_applications, top_offers_by_applications, rate_application, avg_applications_per_semester
 )
 from app.services.search_service import search_applications
 
@@ -98,6 +98,10 @@ def my_applications(
 @router.get("/bq/top-offers", response_model=list[TopOfferOut])
 def bq_top_offers(db: Session = Depends(get_db)):
     return top_offers_by_applications(db)
+
+@router.get("/bq/avg-per-semester", response_model=list[AvgApplicationsPerSemesterOut])
+def bq_avg_per_semester(db: Session = Depends(get_db)):
+    return avg_applications_per_semester(db)
 
 
 # ── Staff endpoints ─────────────────────────────────────────────

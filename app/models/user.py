@@ -14,6 +14,8 @@ class User(Base):
     role = Column(String(20), nullable=False, default="student")
     language = Column(String(2), nullable=False, default="es")
     is_dark_mode = Column(Boolean, nullable=False, default=False)
+    # Sprint 4: Caching — carnet image URL stored after Supabase Storage upload
+    profile_picture = Column(String(500), nullable=True)
 
     created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
     updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now(), nullable=False)
